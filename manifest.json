@@ -12,9 +12,7 @@
     }
   },
   "browser_action": {
-    "default_icon": {
-      "32": "icon.png"
-    }
+    "default_icon": "icon.svg"
   },
   "commands": {
     "copy-url": {

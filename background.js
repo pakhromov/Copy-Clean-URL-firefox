@@ -14,13 +14,37 @@ const STRIP_PARAMS = new Set([
   "list", "t", "index", "start_radio", "rv", "feature", "app", "ab_channel",
   // Referral
   "ref", "referer", "referrer",
+  // Other common ad / campaign trackers
+  "mkt_tok", "yclid", "wbraid", "gbraid", "ttclid", "epik", "rdt_cid",
+  "vero_id", "vero_conv", "_openstat", "s_kwcid", "ef_id", "wickedid",
+  "oly_anon_id", "oly_enc_id", "guce_referrer", "guce_referrer_sig",
+  "pk_campaign", "pk_kwd", "pk_source", "pk_medium",
 ]);
+
+// Params stripped only on matching hosts (incl. subdomains). Reserved for
+// world-wide popular sites whose junk params are too site-specific or generic
+// to strip everywhere (e.g. Amazon affiliate tags).
+const DOMAIN_STRIP = [
+  {
+    host: /(^|\.)amazon\.[a-z.]+$/i,
+    params: new Set([
+      "tag", "linkCode", "linkId", "creativeASIN", "camp", "creative",
+      "ascsubtag", "ref", "ref_", "smid", "psc", "th", "qid", "sr",
+      "keywords", "sprefix", "dib", "dib_tag", "content-id",
+      "pd_rd_i", "pd_rd_r", "pd_rd_w", "pd_rd_wg",
+      "pf_rd_p", "pf_rd_r", "pf_rd_s", "pf_rd_t", "pf_rd_i", "pf_rd_m",
+    ]),
+  },
+];
 
 function cleanUrl(url) {
   try {
     const u = new URL(url);
+    const domainRule = DOMAIN_STRIP.find((r) => r.host.test(u.hostname));
     for (const key of [...u.searchParams.keys()]) {
-      if (STRIP_PARAMS.has(key)) u.searchParams.delete(key);
+      if (STRIP_PARAMS.has(key) || domainRule?.params.has(key)) {
+        u.searchParams.delete(key);
+      }
     }
     return u.toString();
   } catch {
@@ -31,9 +55,9 @@ function cleanUrl(url) {
 async function run(tab) {
   if (!tab?.url) return;
   await navigator.clipboard.writeText(cleanUrl(tab.url));
-  browser.browserAction.setIcon({ path: "icon-active.png", tabId: tab.id });
+  browser.browserAction.setIcon({ path: "icon-active.svg", tabId: tab.id });
   setTimeout(() => {
-    browser.browserAction.setIcon({ path: "icon.png", tabId: tab.id });
+    browser.browserAction.setIcon({ path: "icon.svg", tabId: tab.id });
   }, 3000);
 }
 
